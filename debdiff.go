@@ -24,24 +24,16 @@ import (
 )
 
 type Glob interface {
-	Match(name string) (bool, error)
-}
-
-type realGlob struct {
-	g glob.Glob
-}
-
-func (g realGlob) Match(path string) (bool, error) {
-	return g.g.Match(path), nil
+	Match(name string) bool
 }
 
 type simpleGlob string
 
-func (g simpleGlob) Match(path string) (bool, error) {
+func (g simpleGlob) Match(path string) bool {
 	if path == string(g) {
-		return true, nil
+		return true
 	}
-	return strings.HasPrefix(path, string(g)+"/"), nil
+	return strings.HasPrefix(path, string(g)+"/")
 }
 
 func filehash(path string) (string, error) {
@@ -110,7 +102,7 @@ func (ad *DebDiff) buildIgnoreGlob() error {
 					if err != nil {
 						return errors.Wrap(err, "invalid glob pattern")
 					}
-					ad.ignoreGlob = append(ad.ignoreGlob, realGlob{g: g})
+					ad.ignoreGlob = append(ad.ignoreGlob, g)
 				} else {
 					ad.ignoreGlob = append(ad.ignoreGlob, simpleGlob(l))
 				}
@@ -127,17 +119,13 @@ func (ad *DebDiff) buildIgnoreGlob() error {
 	return nil
 }
 
-func (ad *DebDiff) IsIgnored(path string) (bool, error) {
+func (ad *DebDiff) IsIgnored(path string) bool {
 	for _, glob := range ad.ignoreGlob {
-		match, err := glob.Match(path)
-		if err != nil {
-			return false, err
-		}
-		if match {
-			return true, nil
+		if glob.Match(path) {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
 func (ad *DebDiff) buildAllFile() error {
@@ -153,11 +141,7 @@ func (ad *DebDiff) buildAllFile() error {
 				}
 				return errors.Wrap(err, "walking all files")
 			}
-			ignored, err := ad.IsIgnored(path)
-			if err != nil {
-				return err
-			}
-			if ignored {
+			if ad.IsIgnored(path) {
 				if info.IsDir() {
 					return filepath.SkipDir
 				}
