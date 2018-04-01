@@ -327,6 +327,7 @@ func Main() error {
 	diff := make([]string, 0, len(ad.unpackagedFile)+len(ad.diffRepoFile))
 	diff = append(diff, ad.unpackagedFile...)
 	diff = append(diff, ad.diffRepoFile...)
+	sort.Strings(diff)
 
 	for _, file := range diff {
 		fmt.Println(file)
