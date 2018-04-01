@@ -251,7 +251,7 @@ func (ad *DebDiff) buildDiffRepoFile() error {
 				}
 				continue
 			}
-			log.Fatalf("Error looking for modified repo files (repo): %s", err)
+			return err
 		}
 		if realhash != repohash {
 			ad.diffRepoFile = append(ad.diffRepoFile, file)
@@ -273,7 +273,7 @@ func Main() error {
 	if ad.CpuProfile != "" {
 		f, err := os.Create(ad.CpuProfile)
 		if err != nil {
-			log.Fatal(err)
+			return errors.Wrap(err, "error creating cpu profile")
 		}
 		defer f.Close()
 		pprof.StartCPUProfile(f)
