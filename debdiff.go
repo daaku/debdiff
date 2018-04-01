@@ -24,6 +24,8 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
+
+	"github.com/daaku/debdiff/alternatives"
 )
 
 type Glob interface {
@@ -73,6 +75,7 @@ type DebDiff struct {
 	repoFile       []string
 	unpackagedFile []string
 	diffRepoFile   []string
+	alternateFile  []string
 }
 
 func (ad *DebDiff) buildIgnoreGlob() error {
@@ -227,8 +230,31 @@ func (ad *DebDiff) buildUnpackagedFile() error {
 		if contains(ad.pkgFile, name) {
 			continue
 		}
+		if contains(ad.alternateFile, name) {
+			continue
+		}
 		ad.unpackagedFile = append(ad.unpackagedFile, name)
 	}
+	return nil
+}
+
+func (ad *DebDiff) buildAlternateFile() error {
+	selections, err := alternatives.GetSelections()
+	if err != nil {
+		return err
+	}
+
+	for _, name := range selections {
+		qr, err := alternatives.Query(name)
+		if err != nil {
+			return err
+		}
+		ad.alternateFile = append(ad.alternateFile, qr.Link)
+		for _, slave := range qr.Slaves {
+			ad.alternateFile = append(ad.alternateFile, slave)
+		}
+	}
+	sort.Strings(ad.alternateFile)
 	return nil
 }
 
@@ -288,6 +314,7 @@ func Main() error {
 		ad.buildAllFile,
 		ad.buildRepoFile,
 		ad.buildPkgFile,
+		ad.buildAlternateFile,
 		ad.buildUnpackagedFile,
 		ad.buildDiffRepoFile,
 	}
