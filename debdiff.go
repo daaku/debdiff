@@ -6,6 +6,9 @@
 // ignored data.
 package main // import "github.com/daaku/debdiff"
 
+// TODO: pkg files that are missing
+// TODO: config files that are modified
+
 import (
 	"bufio"
 	"crypto/md5"
@@ -286,6 +289,7 @@ func Main() error {
 		ad.buildRepoFile,
 		ad.buildPkgFile,
 		ad.buildUnpackagedFile,
+		ad.buildDiffRepoFile,
 	}
 	for _, step := range steps {
 		if err := step(); err != nil {
@@ -293,7 +297,11 @@ func Main() error {
 		}
 	}
 
-	for _, file := range ad.unpackagedFile {
+	diff := make([]string, 0, len(ad.unpackagedFile)+len(ad.diffRepoFile))
+	diff = append(diff, ad.unpackagedFile...)
+	diff = append(diff, ad.diffRepoFile...)
+
+	for _, file := range diff {
 		fmt.Println(file)
 	}
 
